@@ -10,50 +10,51 @@ global AXMLPrinter_URL
 AXMLPrinter_URL = 'https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/android4me/AXMLPrinter2.jar'
 '''
 global APKTOOL_URL
-APKTOOL_URL='-L https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.1.jar'
+APKTOOL_URL ='-L https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.3.1.jar'
 global DOWNLOAD_COMMAND
 DOWNLOAD_COMMAND = 'curl --retry 5 --retry-delay 5 -o '
 global DEX2JAR_ZIP
 DEX2JAR_ZIP = 'dex2jar-2.0.zip'
 global APKTOOL_JAR
-APKTOOL_JAR='apktool_2.3.1.jar'
+APKTOOL_JAR ='apktool_2.3.1.jar'
 global DEPENDENCY_FOLDER
 DEPENDENCY_FOLDER = 'Dependencies'
 global LOGFILE
 LOGFILE = 'apkDecompileLog.txt'
 global LOAD_SUCCESS
-LOAD_SUCCESS= 'success'
+LOAD_SUCCESS = 'success'
 
 
 def downloadDependency():
 
     if os.path.isdir(DEPENDENCY_FOLDER):
-        if os.path.exists(DEPENDENCY_FOLDER+'/'+LOAD_SUCCESS):
+        if os.path.exists(DEPENDENCY_FOLDER + '/' + LOAD_SUCCESS):
             return
         else:
-            commandLine("rm -rf "+DEPENDENCY_FOLDER)
+            commandLine("rm -rf " + DEPENDENCY_FOLDER)
     print("Downloading Dependencies")
 
-    loadFail = False
-    loadFail = loadFail or not commandLine("mkdir "+DEPENDENCY_FOLDER)
+    loadSuccess = True
+    loadSuccess = loadSuccess and commandLine("mkdir " + DEPENDENCY_FOLDER)
     os.chdir(DEPENDENCY_FOLDER)
-
-    loadFail = loadFail or not commandLine(DOWNLOAD_COMMAND + DEX2JAR_ZIP + " " + DEX2JAR_URL)
-    loadFail = loadFail or not commandLine(DOWNLOAD_COMMAND + APKTOOL_JAR + " " + APKTOOL_URL)
-    loadFail = loadFail or not commandLine("unzip -o "+ DEX2JAR_ZIP)
-    loadFail = loadFail or not commandLine("rm "+DEX2JAR_ZIP)
-    loadFail = loadFail or not commandLine("chmod 744 " +DEX2JAR_ZIP.split('.zip')[0]+"/d2j_invoke.sh")
-    if not loadFail:
-        fp_w=open(LOAD_SUCCESS,'w')
-    print("Dependencies Download Success: "+str(not loadFail))
+    loadSuccess = loadSuccess and commandLine(DOWNLOAD_COMMAND + DEX2JAR_ZIP + " " + DEX2JAR_URL)
+    print(DEX2JAR_ZIP+" downloaded")
+    loadSuccess = loadSuccess and commandLine(DOWNLOAD_COMMAND + APKTOOL_JAR + " " + APKTOOL_URL)
+    print(APKTOOL_JAR+" downloaded")
+    loadSuccess = loadSuccess and commandLine("unzip -o " + DEX2JAR_ZIP)
+    loadSuccess = loadSuccess and commandLine("rm " + DEX2JAR_ZIP)
+    loadSuccess = loadSuccess and commandLine("chmod 744 " + DEX2JAR_ZIP.split('.zip')[0] + "/d2j_invoke.sh")
+    if loadSuccess:
+        fp_w = open(LOAD_SUCCESS,'w')
+    print("Dependencies Download Success: " + str(loadSuccess))
     os.chdir("../")
 
 
 def commandLine(command):
-    exitcode=os.system(command+' >> '+LOGFILE)
-    if exitcode!=0:
-        print('command line:' +command)
-        print('fail, exit code:'+ str(exitcode))
+    exitcode = os.system(command + ' >> ' + LOGFILE)
+    if exitcode != 0:
+        print('command line:' + command)
+        print('fail, exit code:' + str(exitcode))
         return False
     return True
 
@@ -64,19 +65,23 @@ def decompileApk(apkPath):
     if not apkPath.endswith('.apk'):
         print("this file is not apk")
         return
-    ExtractFolderName=apkPath.split('/')[-1].split('.apk')[0]
-    commandLine("unzip -o -d "+ExtractFolderName+' '+apkPath)
+    ExtractFolderName = apkPath.split('/')[-1].split('.apk')[0]
+    commandLine("unzip -o -d " + ExtractFolderName + ' ' + apkPath)
     #inFolderXmlConvert(ExtractFolderName)
-
+    print("Dex to Jar converting start")
     dex2jar(ExtractFolderName)
+    print("Dex to Jar converting done")
+    print("xml decoding start")
     xmlReplace(ExtractFolderName,apkPath)
+    print("xml decode done")
 
 def dex2jar(apkFolderName):
-    commandLine("sh "+DEPENDENCY_FOLDER+'/'+DEX2JAR_ZIP.split('.zip')[0]+'/d2j-dex2jar.sh -f -o '+apkFolderName+'/classes.jar ' +apkFolderName+'/classes.dex')
+    commandLine("sh " + DEPENDENCY_FOLDER + '/' + DEX2JAR_ZIP.split('.zip')[0] + '/d2j-dex2jar.sh -f -o '
+                + apkFolderName + '/classes.jar '  + apkFolderName + '/classes.dex')
 
 
 def unpackAPK(apkPath):
-    commandLine("java -jar "+DEPENDENCY_FOLDER+"/"+APKTOOL_JAR+" -s -f d "+apkPath+" -o temp")
+    commandLine("java -jar " + DEPENDENCY_FOLDER + "/" + APKTOOL_JAR + " -s -f d " + apkPath + " -o temp")
 
 
 def xmlReplace(ExtractFolderName,apkPath):
@@ -84,8 +89,8 @@ def xmlReplace(ExtractFolderName,apkPath):
     for path,dir,files in os.walk(ExtractFolderName):
         for file in files:
             if file.endswith('.xml'):
-                fullpath=path + '/' + file
-                commandLine('mv -f ' +fullpath.replace(ExtractFolderName,'temp',1) +" "+fullpath)
+                fullpath = path + '/' + file
+                commandLine('mv -f ' + fullpath.replace(ExtractFolderName,'temp',1) + " " +fullpath)
     commandLine("rm -rf temp")
 '''
 def inFolderXmlConvert(FolderName):
@@ -101,9 +106,9 @@ def inFolderXmlConvert(FolderName):
 '''
 def main():
     if os.path.exists(LOGFILE) :
-        ("rm "+LOGFILE)
+        ("rm " + LOGFILE)
     downloadDependency()
-    apkPath=input("Enter the file name(path) of apk : ")
+    apkPath = input("Enter the file name(path) of apk : ")
     decompileApk(apkPath)
 
 
