@@ -110,7 +110,7 @@ def main():
     DownloadDependency()
     apkPath = input("Enter the file name(path) of apk : ")
     DecompileApk(apkPath)
-
+    CommandLine("aapt list  -a %s | grep SdkVersion"%apkPath)
 
 if __name__ == "__main__" :
     main()
